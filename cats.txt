@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CATS (₹) - Accounting Software - Dark Mode</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font family -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1f2937; /* Deep Navy Background */
+            color: #f3f4f6; /* Light gray text */
+            min-height: 100vh;
+        }
+        
+        /* Layout for Sidebar and Main Content */
+        #app-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        #sidebar {
+            width: 250px;
+            min-width: 250px;
+            background-color: #111827; /* Darker sidebar */
+            padding: 1.5rem 1rem;
+            box-shadow: 4px 0 8px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        #main-content {
+            flex-grow: 1;
+            padding: 1.5rem;
+        }
+
+        /* Card Styles */
+        .section-card {
+            background-color: #374151; /* Darker card background */
+            border: 1px solid #4b5563; 
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+
+        /* Form Input Styles */
+        .section-card input,
+        .section-card select {
+            background-color: #4b5563 !important; /* Slightly lighter input fields */
+            color: #f3f4f6 !important;
+            border-color: #6b7280 !important;
+            transition: all 0.2s;
+        }
+        .section-card input:focus,
+        .section-card select:focus {
+            background-color: #525a66 !important;
+            border-color: #34d399 !important; /* Teal focus ring */
+            box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.5) !important;
+        }
+
+        /* Sidebar Navigation Button Styles */
+        .nav-btn {
+            width: 100%;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #9ca3af; /* Light gray text for inactive */
+            background-color: transparent;
+            transition: all 0.2s;
+        }
+        .nav-btn:hover {
+            background-color: #374151;
+            color: #d1d5db;
+        }
+        .nav-btn.active {
+            background-color: #34d399; /* Teal accent for active tab */
+            color: #111827; /* Dark text for contrast */
+            box-shadow: 0 2px 5px rgba(52, 211, 153, 0.4);
+        }
+        
+        /* Account Balances and Reports */
+        .balance-card {
+            border-left: 5px solid;
+            background-color: #374151;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            color: #f3f4f6;
+        }
+        .balance-card.debit-normal {
+            border-left-color: #3b82f6; /* Blue */
+        }
+        .balance-card.credit-normal {
+            border-left-color: #10b981; /* Emerald */
+        }
+        .report-nav-btn {
+            color: #111827 !important;
+            background-color: #9ca3af !important;
+        }
+        .report-nav-btn.active {
+            background-color: #34d399 !important;
+            color: #111827 !important;
+        }
+        .report-view h3 {
+             color: #d1d5db;
+        }
+        #trial-balance-report,
+        #income-statement-report,
+        #balance-sheet-report,
+        #ledger-content {
+            background-color: #4b5563;
+            color: #d1d5db;
+        }
+        .bg-gray-100 {
+            background-color: #4b5563 !important;
+        }
+        .bg-gray-50 {
+            background-color: #4b5563 !important;
+        }
+        .bg-gray-200 {
+             background-color: #6b7280 !important;
+        }
+        .text-gray-900 {
+             color: #f3f4f6 !important;
+        }
+        .text-gray-700 {
+             color: #d1d5db !important;
+        }
+        .text-gray-500 {
+             color: #9ca3af !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-wrapper">
+        <!-- LEFT SIDEBAR NAVIGATION -->
+        <div id="sidebar">
+            <header class="mb-8">
+                <h1 class="text-3xl font-extrabold text-teal-400 mb-1">CATS (₹)</h1>
+                <p class="text-xs text-gray-400">Double-Entry System</p>
+                <p id="user-info" class="text-xs text-blue-300 mt-3">Loading user...</p>
+            </header>
+
+            <nav class="space-y-2">
+                <!-- NEW ORDER -->
+                <button onclick="switchView('LedgersMaster')" class="nav-btn bg-gray-600">
+                    📘 Ledgers (Master)
+                </button>
+                <button onclick="switchView('VoucherEntry')" class="nav-btn bg-gray-600">
+                    🧾 Voucher Entry
+                </button>
+                <button onclick="switchView('DayBook')" class="nav-btn bg-gray-600">
+                    📅 Day Book
+                </button>
+                <button onclick="switchView('Reports')" class="nav-btn bg-gray-600">
+                    📈 Financial Reports
+                </button>
+            </nav>
+        </div>
+
+        <!-- MAIN CONTENT AREA -->
+        <div id="main-content" class="w-full">
+            <div id="app" class="max-w-7xl mx-auto">
+                
+                <!-- Balance Summary Section (Always visible) -->
+                <section class="mb-8">
+                    <h2 class="text-2xl font-bold text-gray-200 mb-4 pb-2 border-b border-gray-600">Current Balances (Liquidity Focus)</h2>
+                    <div id="balances-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <!-- Balance Cards will be rendered here -->
+                    </div>
+                </section>
+
+                <!-- --- VIEW CONTAINERS --- -->
+                
+                <!-- Voucher Entry View -->
+                <div id="VoucherEntry-view" class="view hidden">
+                    <section class="section-card mb-10">
+                        <h2 class="text-2xl font-bold text-teal-400 mb-6 pb-2 border-b border-gray-600">Record New Voucher Entry</h2>
+                        <form id="transaction-form" class="space-y-6">
+                            <!-- Voucher Type Selector -->
+                            <div>
+                                <label for="voucher-type" class="block text-sm font-medium text-gray-300">Voucher Type</label>
+                                <select id="voucher-type" required onchange="saveFormToSession()" class="mt-1 block w-full md:w-1/3 rounded-lg border-gray-600 shadow-sm p-3 border">
+                                    <option value="" disabled selected>Loading...</option>
+                                </select>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <!-- Date -->
+                                <div>
+                                    <label for="date" class="block text-sm font-medium text-gray-300">Date</label>
+                                    <input type="date" id="date" required onchange="saveFormToSession()" class="mt-1 block w-full rounded-lg border-gray-600 shadow-sm p-3 border">
+                                </div>
+                                <!-- Narration -->
+                                <div class="md:col-span-2">
+                                    <label for="narration" class="block text-sm font-medium text-gray-300">Narration (Optional)</label>
+                                    <input type="text" id="narration" placeholder="e.g., Purchased supplies" oninput="saveFormToSession()" class="mt-1 block w-full rounded-lg border-gray-600 shadow-sm p-3 border">
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <!-- Debit Account (From) -->
+                                <div>
+                                    <label for="debit-account" class="block text-sm font-medium text-gray-300">Debit Account</label>
+                                    <select id="debit-account" required onchange="saveFormToSession()" class="mt-1 block w-full rounded-lg border-gray-600 shadow-sm p-3 border">
+                                        <option value="" disabled selected>Loading...</option>
+                                    </select>
+                                </div>
+                                <!-- Credit Account (To) -->
+                                <div>
+                                    <label for="credit-account" class="block text-sm font-medium text-gray-300">Credit Account</label>
+                                    <select id="credit-account" required onchange="saveFormToSession()" class="mt-1 block w-full rounded-lg border-gray-600 shadow-sm p-3 border">
+                                        <option value="" disabled selected>Loading...</option>
+                                    </select>
+                                </div>
+                                <!-- Amount -->
+                                <div>
+                                    <label for="amount" class="block text-sm font-medium text-gray-300">Amount (₹)</label>
+                                    <input type="text" id="amount" placeholder="0" oninput="formatAmountInput(this); saveFormToSession();" required class="mt-1 block w-full rounded-lg border-gray-600 shadow-sm p-3 border">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="w-full md:w-auto px-8 py-3 bg-teal-500 text-gray-900 font-bold rounded-xl shadow-lg hover:bg-teal-400 transition duration-150 ease-in-out disabled:opacity-50" id="submit-btn" disabled>
+                                Record Voucher
+                            </button>
+                            <!-- Notification for Voucher Entry -->
+                            <div id="transaction-success-message" class="bg-green-700 text-white px-4 py-3 rounded-lg relative hidden transition-opacity duration-300">
+                                Voucher recorded successfully!
+                            </div>
+                            <div id="error-message" class="text-red-400 text-sm hidden"></div>
+                        </form>
+                    </section>
+                </div>
+
+                <!-- Day Book View -->
+                <div id="DayBook-view" class="view hidden">
+                    <section class="section-card">
+                        <div class="flex justify-between items-center mb-6 pb-2 border-b border-gray-600">
+                             <h2 class="text-2xl font-bold text-teal-400">Day Book (All Vouchers)</h2>
+                             <div class="relative">
+                                 <!-- More Actions Button -->
+                                 <button onclick="toggleDropdown('more-actions-dropdown')" class="px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-500 transition duration-150 ease-in-out">
+                                    ⚙️ More Actions
+                                </button>
+                                <!-- Dropdown Menu -->
+                                <div id="more-actions-dropdown" class="absolute right-0 mt-2 w-48 bg-gray-700 rounded-md shadow-lg z-20 hidden">
+                                    <button onclick="document.getElementById('file-input-import').click(); toggleDropdown('more-actions-dropdown');" class="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 rounded-t-md">
+                                        ⬆️ Import from CSV
+                                    </button>
+                                    <button onclick="exportDayBookToCSV(); toggleDropdown('more-actions-dropdown');" class="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-600 rounded-b-md">
+                                        ⬇️ Export to CSV
+                                    </button>
+                                </div>
+                             </div>
+                        </div>
+                        
+                        <input type="file" id="file-input-import" accept=".csv" class="hidden" onchange="importDayBookFromCSV(event)">
+                        <div id="import-status" class="mb-4 text-sm hidden"></div>
+                        
+                        <div class="overflow-x-auto rounded-lg border border-gray-600">
+                            <table class="min-w-full divide-y divide-gray-700">
+                                <thead class="bg-gray-700">
+                                    <tr>
+                                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
+                                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Voucher Type</th>
+                                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Narration</th>
+                                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Debit Acc.</th>
+                                        <th class="px-3 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Credit Acc.</th>
+                                        <th class="px-3 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Amount (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="day-book-body" class="bg-gray-800 divide-y divide-gray-700">
+                                    <!-- Transactions will be rendered here -->
+                                </tbody>
+                            </table>
+                            <div id="no-transactions" class="p-6 text-center text-gray-400 hidden">No vouchers recorded yet.</div>
+                        </div>
+                    </section>
+                </div>
+                
+                <!-- Ledgers (Master) View - CONSOLIDATED VIEW -->
+                <div id="LedgersMaster-view" class="view active">
+                    <section class="section-card">
+                        <h2 class="text-2xl font-bold text-teal-400 mb-6 pb-2 border-b border-gray-600">Ledgers (Master)</h2>
+
+                         <!-- Sub-Navigation for Ledger and Management -->
+                        <div class="flex flex-wrap gap-4 mb-6 border-b pb-4 border-gray-600">
+                            <button onclick="renderLedgersMasterSubView('AccountDetail')" class="sub-nav-btn active bg-teal-500 hover:bg-teal-400 text-gray-900 font-semibold py-2 px-4 rounded-lg transition duration-150">VIEW LEDGER</button>
+                            <button onclick="renderLedgersMasterSubView('ManageAccounts')" class="sub-nav-btn bg-gray-600 hover:bg-gray-500 text-gray-300 font-semibold py-2 px-4 rounded-lg transition duration-150">CREATE LEDGER / ACCOUNT</button>
+                        </div>
+                        
+                        <!-- Account Detail (Ledger) Content -->
+                        <div id="AccountDetail-subview" class="sub-view">
+                            <h3 class="text-xl font-bold text-gray-200 mb-4">VIEW LEDGER</h3>
+                            <div class="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+                                <label for="ledger-account-select" class="font-medium text-gray-300 whitespace-nowrap">Select Account:</label>
+                                <select id="ledger-account-select" onchange="renderLedger()" class="mt-1 block w-full md:w-1/3 rounded-lg border-gray-600 shadow-sm p-3 border">
+                                    <option value="" disabled selected>Loading Accounts...</option>
+                                </select>
+                            </div>
+                            <div id="ledger-content" class="overflow-x-auto rounded-lg border border-gray-600">
+                                <p class="p-6 text-center text-gray-400">Please select an account above to view its detailed ledger.</p>
+                            </div>
+                        </div>
+
+                        <!-- Chart of Accounts (Management) Content -->
+                        <div id="ManageAccounts-subview" class="sub-view hidden">
+                            <h3 class="text-xl font-bold text-gray-200 mb-4">CREATE LEDGER / ACCOUNT</h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                <!-- 1. Add New Account Form -->
+                                <div class="lg:col-span-1 lg:pr-6 border-r border-gray-600">
+                                    <h4 class="text-lg font-semibold text-gray-200 mb-4">Add New Account</h4>
+                                    <form id="account-form" class="space-y-4">
+                                        <div>
+                                            <label for="new-account-name" class="block text-sm font-medium text-gray-300">Account Name</label>
+                                            <input type="text" id="new-account-name" placeholder="e.g., Marketing Expense" required class="mt-1 block w-full rounded-lg border-gray-600 shadow-sm p-3 border">
+                                        </div>
+                                        <div>
+                                            <label for="new-account-type" class="block text-sm font-medium text-gray-300">Account Type</label>
+                                            <select id="new-account-type" required class="mt-1 block w-full rounded-lg border-gray-600 shadow-sm p-3 border">
+                                                <!-- Options populated by JS -->
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="w-full px-6 py-3 bg-teal-500 text-gray-900 font-bold rounded-xl shadow-lg hover:bg-teal-400 transition duration-150 ease-in-out disabled:opacity-50" id="add-account-btn" disabled>
+                                            Save Account
+                                        </button>
+                                        <!-- Notification for Account Management -->
+                                        <div id="account-success-message" class="bg-green-700 text-white px-4 py-3 rounded-lg relative hidden transition-opacity duration-300">Account added successfully!</div>
+                                        <div id="account-error-message" class="text-red-400 text-sm hidden"></div>
+                                    </form>
+                                </div>
+                                
+                                <!-- 2. Existing Accounts List -->
+                                <div class="lg:col-span-2 lg:pl-6">
+                                    <h4 class="text-lg font-semibold text-gray-200 mb-4">Current Chart of Accounts List</h4>
+                                    <div id="accounts-list" class="space-y-3 max-h-96 overflow-y-auto p-4 border border-gray-600 rounded-xl bg-gray-700">
+                                        <p class="text-gray-400 text-sm italic">Loading accounts...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+
+                <!-- Reports View -->
+                <div id="Reports-view" class="view hidden">
+                    <section class="section-card mb-6">
+                        <h2 class="text-2xl font-bold text-teal-400 mb-6 pb-2 border-b border-gray-600">Financial Reports</h2>
+                        
+                        <!-- Report Sub-Navigation -->
+                        <div class="flex flex-wrap gap-4 mb-6 border-b pb-4 border-gray-600">
+                            <button onclick="renderReportView('TrialBalance')" class="report-nav-btn active bg-teal-500 hover:bg-teal-400 text-gray-900 font-semibold py-2 px-4 rounded-lg transition duration-150">Trial Balance</button>
+                            <button onclick="renderReportView('IncomeStatement')" class="report-nav-btn bg-gray-600 hover:bg-gray-500 text-gray-300 font-semibold py-2 px-4 rounded-lg transition duration-150">Income Statement</button>
+                            <button onclick="renderReportView('BalanceSheet')" class="report-nav-btn bg-gray-600 hover:bg-gray-500 text-gray-300 font-semibold py-2 px-4 rounded-lg transition duration-150">Balance Sheet</button>
+                        </div>
+
+                        <!-- Report Containers -->
+                        <div id="report-content">
+                            
+                            <!-- Trial Balance Report -->
+                            <div id="TrialBalance-report-view" class="report-view">
+                                <h3 class="text-xl font-bold text-gray-200 mb-3 border-b pb-2 border-gray-600">Trial Balance</h3>
+                                <div id="trial-balance-report" class="bg-gray-700 p-4 rounded-lg shadow-inner min-h-[100px]">
+                                    <p class="text-sm text-gray-400">Calculating...</p>
+                                </div>
+                            </div>
+
+                            <!-- Income Statement Report -->
+                            <div id="IncomeStatement-report-view" class="report-view hidden">
+                                <div class="flex flex-wrap gap-3 mb-4" id="IncomeStatementRadioGroup">
+                                    <button class="format-radio active bg-blue-500 text-white font-medium py-1 px-3 rounded-full text-sm" onclick="setReportFormat('IncomeStatement', 'T')">T-Format (Horizontal)</button>
+                                    <button class="format-radio bg-gray-600 text-gray-300 font-medium py-1 px-3 rounded-full text-sm" onclick="setReportFormat('IncomeStatement', 'Vertical')">Vertical (Companies Act)</button>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-200 mb-3 border-b pb-2 border-gray-600">Income Statement (P&L)</h3>
+                                <div id="income-statement-report" class="bg-gray-700 p-4 rounded-lg shadow-inner min-h-[100px]">
+                                    <p class="text-sm text-gray-400">Report details will load here...</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Balance Sheet Report -->
+                            <div id="BalanceSheet-report-view" class="report-view hidden">
+                                <div class="flex flex-wrap gap-3 mb-4" id="BalanceSheetRadioGroup">
+                                    <button class="format-radio active bg-blue-500 text-white font-medium py-1 px-3 rounded-full text-sm" onclick="setReportFormat('BalanceSheet', 'T')">T-Format (Horizontal)</button>
+                                    <button class="format-radio bg-gray-600 text-gray-300 font-medium py-1 px-3 rounded-full text-sm" onclick="setReportFormat('BalanceSheet', 'Vertical')">Vertical (Companies Act)</button>
+                                </div>
+                                <h3 class="text-xl font-bold text-gray-200 mb-3 border-b pb-2 border-gray-600">Balance Sheet</h3>
+                                <div id="balance-sheet-report" class="bg-gray-700 p-4 rounded-lg shadow-inner min-h-[100px]">
+                                     <p class="text-sm text-gray-400">Assets = Liabilities + Equity (Calculating...)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK Imports and Core Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, setDoc, getDoc, setLogLevel, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- Core Application Logic and State ---
+
+        // Global variables provided by the environment
+        const firebaseConfig = {
+    apiKey: "AIzaSyCvQoId0DTOB4nFN1wdkW4i3SlOJQLF0v8", 
+    authDomain: "cats-accounting.firebaseapp.com",
+    projectId: "cats-accounting",
+    storageBucket: "cats-accounting.firebasestorage.app",
+    messagingSenderId: "574789467274",
+    appId: "1:574789467274:web:6a127c7765876e9b04c173",
+    measurementId: "G-0PF7GE95TC"
+};
+const appId = 'CATS_FINANCE_LIVE'; 
+const initialAuthToken = null;
+
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+        let ACCOUNTS = {}; // Now dynamic and loaded from Firestore
+        let ALL_TRANSACTIONS = []; // Global store for all transactions
+        const MAX_RETRIES = 5; // Max attempts to retry Firebase authentication
+        const SESSION_KEY = 'accounting_form_data'; // Key for session storage
+
+        // Accounting Constants
+        const ACCOUNT_TYPES = {
+            ASSET: 'Asset',
+            LIABILITY: 'Liability',
+            EQUITY: 'Equity',
+            REVENUE: 'Revenue',
+            EXPENSE: 'Expense'
+        };
+
+        const VOUCHER_TYPES = [
+            'Journal', 'Payment', 'Receipt', 'Contra', 
+            'Sales', 'Purchase', 'Credit Note', 'Debit Note'
+        ];
+
+        const ACCOUNT_CONFIGS = {
+            'Asset': { normalBalance: 'Debit', icon: '💰' },
+            'Liability': { normalBalance: 'Credit', icon: '💳' },
+            'Equity': { normalBalance: 'Credit', icon: '👑' },
+            'Revenue': { normalBalance: 'Credit', icon: '📈' },
+            'Expense': { normalBalance: 'Debit', icon: '📉' }
+        };
+
+        const DEFAULT_ACCOUNTS = {
+            'Cash': { type: ACCOUNT_TYPES.ASSET, category: 'Cash/Bank' },
+            'Bank': { type: ACCOUNT_TYPES.ASSET, category: 'Cash/Bank' },
+            'Accounts Receivable': { type: ACCOUNT_TYPES.ASSET, category: 'Receivables' },
+            'Sales Revenue': { type: ACCOUNT_TYPES.REVENUE, category: 'Revenue' },
+            'Purchases': { type: ACCOUNT_TYPES.EXPENSE, category: 'Cost of Goods' }, 
+            'Rent Expense': { type: ACCOUNT_TYPES.EXPENSE, category: 'Expenses' },
+            'Owner\'s Equity': { type: ACCOUNT_TYPES.EQUITY, category: 'Equity' },
+            'Accounts Payable': { type: ACCOUNT_TYPES.LIABILITY, category: 'Payables' },
+        };
+
+        // DOM Elements
+        const form = document.getElementById('transaction-form');
+        const accountForm = document.getElementById('account-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const addAccountBtn = document.getElementById('add-account-btn');
+        const errorMsg = document.getElementById('error-message');
+        const accountErrorMsg = document.getElementById('account-error-message');
+        const accountSuccessMsg = document.getElementById('account-success-message'); // Ref for account success
+        const transactionSuccessMsg = document.getElementById('transaction-success-message'); // Ref for transaction success
+        const balancesContainer = document.getElementById('balances-container');
+        const dayBookBody = document.getElementById('day-book-body');
+        const noTransactionsMsg = document.getElementById('no-transactions');
+        const userInfo = document.getElementById('user-info');
+        const accountsList = document.getElementById('accounts-list');
+        const newAccountTypeSelect = document.getElementById('new-account-type');
+        const voucherTypeSelect = document.getElementById('voucher-type');
+        const debitAccountSelect = document.getElementById('debit-account');
+        const creditAccountSelect = document.getElementById('credit-account');
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const ledgerAccountSelect = document.getElementById('ledger-account-select');
+        const ledgerContent = document.getElementById('ledger-content');
+        const narrationInput = document.getElementById('narration');
+        const importStatusEl = document.getElementById('import-status'); // New element for import status
+
+
+        // Initial View State
+        let currentView = 'LedgersMaster'; // CHANGED DEFAULT VIEW
+        let currentReportView = 'TrialBalance';
+        let currentMasterSubView = 'AccountDetail'; // New state for LedgersMaster
+        let reportFormats = { IncomeStatement: 'T', BalanceSheet: 'T' }; // New state for report formats
+
+
+        // Helper to format currency (INR)
+        const formatter = new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0, // Exclude decimals for display
+            minimumFractionDigits: 0,
+        });
+        
+        // Helper to format a number string using the Indian comma system (whole numbers only)
+        const indianFormatter = new Intl.NumberFormat('en-IN', {
+            maximumFractionDigits: 0,
+            minimumFractionDigits: 0,
+            useGrouping: true,
+        });
+
+        // Function to format the amount input field as the user types (whole numbers only)
+        function formatAmountInput(inputElement) {
+            // 1. Get the current value, removing all non-digit characters (including '.')
+            let cleanValue = inputElement.value.replace(/[^0-9]/g, '');
+
+            // 2. Format the clean numerical value using the Indian comma system
+            if (cleanValue) {
+                // Use parseInt for whole numbers
+                const numberValue = parseInt(cleanValue, 10);
+                if (!isNaN(numberValue)) {
+                    // For input, we want the number without the currency symbol
+                    inputElement.value = indianFormatter.format(numberValue);
+                } else {
+                    inputElement.value = cleanValue; // Keep the raw input if it's incomplete
+                }
+            } else {
+                inputElement.value = '';
+            }
+        }
+        window.formatAmountInput = formatAmountInput; // Expose globally for HTML oninput
+
+        // --- Form Persistence Functions ---
+        function saveFormToSession() {
+            const formData = {
+                voucherType: voucherTypeSelect.value,
+                date: document.getElementById('date').value,
+                narration: narrationInput.value,
+                debitAccount: debitAccountSelect.value,
+                creditAccount: creditAccountSelect.value,
+                amount: document.getElementById('amount').value // Save the formatted string
+            };
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify(formData));
+        }
+        window.saveFormToSession = saveFormToSession; // Expose globally
+
+        function loadFormFromSession() {
+            const savedData = sessionStorage.getItem(SESSION_KEY);
+            if (savedData) {
+                const formData = JSON.parse(savedData);
+                
+                // Set text/date fields
+                document.getElementById('date').value = formData.date || new Date().toISOString().slice(0, 10);
+                narrationInput.value = formData.narration || '';
+                document.getElementById('amount').value = formData.amount || '';
+                
+                // Set select fields (needs accounts to be loaded first, handled by later logic)
+                voucherTypeSelect.value = formData.voucherType || VOUCHER_TYPES[0];
+                debitAccountSelect.value = formData.debitAccount || '';
+                creditAccountSelect.value = formData.creditAccount || '';
+                
+            } else {
+                 document.getElementById('date').valueAsDate = new Date();
+            }
+        }
+        // --- END Form Persistence Functions ---
+
+
+        // --- Firestore Paths ---
+        const getAccountSettingsDocRef = (db, userId, appId) => {
+            return doc(db, `artifacts/${appId}/users/${userId}/settings/accounts`);
+        };
+        const getTransactionsCollectionRef = (db, userId, appId) => {
+            return collection(db, `artifacts/${appId}/users/${userId}/transactions`);
+        };
+        
+        // --- View Management ---
+        function switchView(viewName) {
+            currentView = viewName;
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.add('hidden');
+            });
+            document.getElementById(`${viewName}-view`).classList.remove('hidden');
+
+            navButtons.forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-600', 'hover:bg-blue-700', 'bg-gray-600', 'hover:bg-gray-700');
+                if (btn.getAttribute('onclick').includes(viewName)) {
+                    btn.classList.add('active'); // Active class handles the color in new CSS
+                } else {
+                    // Set non-active style specific to the new dark theme
+                    btn.classList.add('bg-gray-600'); 
+                }
+            });
+
+            // Trigger rendering for dynamic views
+            if (viewName === 'Reports') {
+                renderReports(calculateBalances(ALL_TRANSACTIONS));
+                renderReportView(currentReportView); 
+            } else if (viewName === 'DayBook') {
+                renderDayBook(ALL_TRANSACTIONS);
+            } else if (viewName === 'LedgersMaster') {
+                 // Ensure sub-view is rendered (default: Account Detail)
+                renderLedgersMasterSubView(currentMasterSubView);
+            } else if (viewName === 'VoucherEntry') {
+                // When switching back to VoucherEntry, ensure form data is loaded
+                loadFormFromSession(); 
+            }
+        }
+
+        // New function to handle sub-navigation inside LedgersMaster
+        function renderLedgersMasterSubView(subViewName) {
+            currentMasterSubView = subViewName;
+
+            document.querySelectorAll('.sub-view').forEach(view => {
+                view.classList.add('hidden');
+            });
+            document.getElementById(`${subViewName}-subview`).classList.remove('hidden');
+
+            document.querySelectorAll('.sub-nav-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-teal-500', 'hover:bg-teal-400', 'text-gray-900', 'bg-gray-600', 'hover:bg-gray-500', 'text-gray-300');
+                 if (btn.getAttribute('onclick').includes(subViewName)) {
+                    btn.classList.add('active', 'bg-teal-500', 'hover:bg-teal-400', 'text-gray-900');
+                } else {
+                    btn.classList.add('bg-gray-600', 'hover:bg-gray-500', 'text-gray-300');
+                }
+            });
+            
+            // Trigger rendering based on selected sub-view
+            if (subViewName === 'AccountDetail') {
+                 populateLedgerAccountSelect(); // Ensure dropdown is up-to-date
+                 renderLedger(); // Render the selected ledger account
+            } else if (subViewName === 'ManageAccounts') {
+                 populateAccountTypeDropdown(); // Ensure account type dropdown is populated
+                 renderAccountList(); // Refresh account list
+            }
+        }
+        window.renderLedgersMasterSubView = renderLedgersMasterSubView; // Expose globally
+        
+        function renderReportView(reportName) {
+            currentReportView = reportName;
+            
+            // Hide all report views
+            document.querySelectorAll('.report-view').forEach(view => {
+                view.classList.add('hidden');
+            });
+            // Show the selected report view
+            document.getElementById(`${reportName}-report-view`).classList.remove('hidden');
+
+            // Update navigation button styles
+            document.querySelectorAll('.report-nav-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-teal-500', 'hover:bg-teal-400', 'text-gray-900', 'bg-gray-600', 'hover:bg-gray-500', 'text-gray-300');
+                if (btn.getAttribute('onclick').includes(reportName)) {
+                    btn.classList.add('active', 'bg-teal-500', 'hover:bg-teal-400', 'text-gray-900');
+                } else {
+                    btn.classList.add('bg-gray-600', 'hover:bg-gray-500', 'text-gray-300');
+                }
+            });
+        }
+        window.renderReportView = renderReportView; // Expose globally
+
+        function setReportFormat(reportType, format) {
+            reportFormats[reportType] = format;
+            
+            // Update button styles
+            document.querySelectorAll(`#${reportType}RadioGroup .format-radio`).forEach(radio => {
+                radio.classList.remove('active', 'bg-blue-500', 'text-white', 'bg-gray-600', 'text-gray-300');
+                if (radio.innerText.includes(format === 'T' ? 'T-Format' : 'Vertical')) {
+                    radio.classList.add('active', 'bg-blue-500', 'text-white');
+                } else {
+                    radio.classList.add('bg-gray-600', 'text-gray-300');
+                }
+            });
+
+            // Re-render only if the Reports view is currently active
+            if (currentView === 'Reports') {
+                renderReports(calculateBalances(ALL_TRANSACTIONS)); // Recalculates and reruns render* functions
+                renderReportView(currentReportView); // Ensures the container is visible
+            }
+        }
+        window.setReportFormat = setReportFormat; // Expose globally
+
+        // --- 1. Firebase Initialization and Authentication ---
+        // Helper for exponential backoff (for retrying auth)
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function initAuth(app, retryCount = 0) {
+            const authInstance = getAuth(app);
+            try {
+                // Attempt to sign in with custom token or anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(authInstance, initialAuthToken);
+                } else {
+                    await signInAnonymously(authInstance);
+                }
+                return authInstance;
+            } catch (error) {
+                console.error(`Attempt ${retryCount + 1} failed to authenticate:`, error);
+                if (retryCount < MAX_RETRIES) {
+                    const delay = Math.pow(2, retryCount) * 1000 + (Math.random() * 1000); // 2s, 4s, 8s, etc. + jitter
+                    userInfo.textContent = `Retrying connection in ${Math.round(delay / 1000)}s... (Attempt ${retryCount + 2}/${MAX_RETRIES + 1})`;
+                    await sleep(delay);
+                    return initAuth(app, retryCount + 1); // Recursive retry
+                }
+                throw new Error("Authentication failed after multiple retries.");
+            }
+        }
+
+        async function setupFirebase() {
+            userInfo.textContent = 'Authenticating with Firebase...';
+            try {
+                setLogLevel('error');
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                
+                // Use the reliable initAuth wrapper
+                auth = await initAuth(app);
+                
+                populateVoucherTypeDropdown();
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        userInfo.textContent = `Connection successful. User ID: ${userId} | App ID: ${appId}`;
+                        
+                        await loadAccountsFromFirestore();
+                        
+                        isAuthReady = true;
+                        submitBtn.disabled = false;
+                        addAccountBtn.disabled = false;
+                        
+                        // Populate dynamic dropdowns (Accounts) and start listeners
+                        populateAccountDropdowns();
+                        populateLedgerAccountSelect(); // Populate for Ledger view
+                        // Also populate the account type dropdown for the Account Management view
+                        populateAccountTypeDropdown(); 
+                        listenForTransactions();
+                        
+                        loadFormFromSession(); // Load saved form data AFTER dropdowns are populated
+
+                        switchView(currentView); // Initial view load
+                    }
+                    // Note: If authentication failed entirely after retries, the code would be 
+                    // caught in the surrounding try/catch block.
+                });
+
+            } catch (error) {
+                console.error("Critical Error setting up Firebase:", error);
+                userInfo.textContent = `Error: Cannot connect to Firebase. Try reloading.`;
+                submitBtn.disabled = true;
+                addAccountBtn.disabled = true;
+                // Ensure dropdowns are not stuck on "Loading..." if auth fails
+                populateAccountDropdowns(true); 
+            }
+        }
+
+        // --- 2. Account Management Logic ---
+
+        function populateAccountTypeDropdown() {
+            newAccountTypeSelect.innerHTML = '<option value="" disabled selected>Select Account Type</option>';
+            Object.keys(ACCOUNT_TYPES).forEach(key => {
+                const type = ACCOUNT_TYPES[key];
+                const option = `<option value="${type}">${type}</option>`;
+                newAccountTypeSelect.insertAdjacentHTML('beforeend', option);
+            });
+        }
+        
+        function populateVoucherTypeDropdown() {
+            voucherTypeSelect.innerHTML = '';
+            VOUCHER_TYPES.forEach(type => {
+                const option = `<option value="${type}">${type} Voucher</option>`;
+                voucherTypeSelect.insertAdjacentHTML('beforeend', option);
+            });
+            // Select Journal as default
+            voucherTypeSelect.value = 'Journal Voucher';
+        }
+
+        function populateLedgerAccountSelect() {
+            if (!isAuthReady && Object.keys(ACCOUNTS).length === 0) {
+                 ledgerAccountSelect.innerHTML = '<option value="" disabled selected>No Accounts Found</option>';
+                 return;
+            }
+
+            ledgerAccountSelect.innerHTML = '<option value="" disabled selected>Select Account</option>';
+            const accountNames = Object.keys(ACCOUNTS).sort();
+
+            accountNames.forEach(name => {
+                const type = ACCOUNTS[name].type;
+                const option = `<option value="${name}">${name} (${type})</option>`;
+                ledgerAccountSelect.insertAdjacentHTML('beforeend', option);
+            });
+        }
+        
+        async function loadAccountsFromFirestore() {
+            accountsList.innerHTML = '<p class="text-gray-400 text-sm italic">Loading accounts...</p>';
+            try {
+                const docRef = getAccountSettingsDocRef(db, userId, appId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists() && docSnap.data().accounts) {
+                    ACCOUNTS = docSnap.data().accounts;
+                } else {
+                    ACCOUNTS = DEFAULT_ACCOUNTS;
+                    // Only save defaults if we are authorized (userId is set)
+                    if (userId) await saveAccountsToFirestore(ACCOUNTS); 
+                }
+                renderAccountList();
+            } catch (error) {
+                console.error("Error loading accounts:", error);
+                userInfo.textContent = `Error loading accounts: ${error.message}`;
+                accountsList.innerHTML = `<p class="text-red-400 text-sm">Error loading accounts: ${error.message}</p>`;
+            }
+        }
+
+        async function saveAccountsToFirestore(accounts) {
+            const docRef = getAccountSettingsDocRef(db, userId, appId);
+            await setDoc(docRef, { accounts: accounts });
+        }
+        
+        accountForm.addEventListener('submit', addAccount);
+
+        async function addAccount(event) {
+            event.preventDefault();
+            
+            accountErrorMsg.classList.add('hidden');
+            accountSuccessMsg.classList.add('hidden');
+            addAccountBtn.disabled = true;
+
+            const name = document.getElementById('new-account-name').value.trim();
+            const type = document.getElementById('new-account-type').value;
+
+            if (name === "" || type === "") {
+                accountErrorMsg.textContent = 'Name and Type are required.';
+                accountErrorMsg.classList.remove('hidden');
+                addAccountBtn.disabled = false;
+                return;
+            }
+            if (ACCOUNTS[name]) {
+                accountErrorMsg.textContent = `Account '${name}' already exists.`;
+                accountErrorMsg.classList.remove('hidden');
+                addAccountBtn.disabled = false;
+                return;
+            }
+
+            const newAccount = {
+                type: type,
+                category: 'Custom'
+            };
+            
+            const updatedAccounts = { ...ACCOUNTS, [name]: newAccount };
+            
+            try {
+                await saveAccountsToFirestore(updatedAccounts);
+                ACCOUNTS = updatedAccounts; 
+                
+                document.getElementById('account-form').reset();
+                
+                // Show success notification
+                accountSuccessMsg.classList.remove('hidden');
+                setTimeout(() => {
+                    accountSuccessMsg.classList.add('hidden');
+                }, 3000); 
+                
+                renderAccountList();
+                populateAccountDropdowns();
+                populateLedgerAccountSelect(); // Update ledger dropdown
+
+            } catch (e) {
+                console.error("Error saving new account: ", e);
+                accountErrorMsg.textContent = `Error saving account: ${e.message}`;
+                accountErrorMsg.classList.remove('hidden');
+            } finally {
+                addAccountBtn.disabled = false;
+            }
+        }
+        
+        function renderAccountList() {
+            accountsList.innerHTML = '';
+            const accountNames = Object.keys(ACCOUNTS).sort();
+
+            if (accountNames.length === 0) {
+                accountsList.innerHTML = '<p class="text-gray-400 text-sm italic">No accounts defined. Use the form to add one.</p>';
+                return;
+            }
+
+            accountNames.forEach(name => {
+                const account = ACCOUNTS[name];
+                const config = ACCOUNT_CONFIGS[account.type] || {};
+                const balanceType = config.normalBalance || 'N/A';
+                
+                const itemHtml = `
+                    <div class="flex justify-between items-center p-3 text-sm bg-gray-700 rounded-lg shadow-sm border border-gray-600 hover:bg-gray-600 transition duration-100">
+                        <span class="font-medium text-gray-200 truncate">${name}</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-blue-400 bg-blue-900 px-2 py-0.5 rounded-full">${account.type}</span>
+                            <span class="text-xs text-gray-400 bg-gray-600 px-2 py-0.5 rounded-full">${balanceType}</span>
+                        </div>
+                    </div>
+                `;
+                accountsList.insertAdjacentHTML('beforeend', itemHtml);
+            });
+        }
+
+
+        // --- 3. Dropdowns and UI Update ---
+
+        function populateAccountDropdowns(isError = false) {
+            const debitSelect = debitAccountSelect;
+            const creditSelect = creditAccountSelect;
+
+            if (isError) {
+                 debitSelect.innerHTML = '<option value="" disabled selected>Connection Failed. Reload Page.</option>';
+                 creditSelect.innerHTML = '<option value="" disabled selected>Connection Failed. Reload Page.</option>';
+                 return;
+            }
+            
+            if (Object.keys(ACCOUNTS).length === 0) {
+                 debitSelect.innerHTML = '<option value="" disabled selected>No Accounts Found (Add in Account Management)</option>';
+                 creditSelect.innerHTML = '<option value="" disabled selected>No Accounts Found (Add in Account Management)</option>';
+                 return;
+            }
+
+            debitSelect.innerHTML = '<option value="" disabled selected>Select Account (Debit)</option>';
+            creditSelect.innerHTML = '<option value="" disabled selected>Select Account (Credit)</option>';
+
+            const accountNames = Object.keys(ACCOUNTS).sort();
+
+            accountNames.forEach(name => {
+                const type = ACCOUNTS[name].type;
+                const option = `<option value="${name}">${name} (${type})</option>`;
+                debitSelect.insertAdjacentHTML('beforeend', option);
+                creditSelect.insertAdjacentHTML('beforeend', option);
+            });
+
+            // Do NOT reset date here; rely on loadFormFromSession
+            // document.getElementById('date').valueAsDate = new Date();
+        }
+
+        // --- 4. Core Accounting Logic: Calculate Balances ---
+        function calculateBalances(transactions) {
+            const balances = {};
+            const accountNames = Object.keys(ACCOUNTS);
+
+            accountNames.forEach(name => {
+                balances[name] = 0;
+            });
+
+            transactions.forEach(t => {
+                // Amounts are now guaranteed to be integers
+                const amount = parseInt(t.amount, 10);
+
+                if (balances.hasOwnProperty(t.debitAccount)) {
+                    balances[t.debitAccount] += amount;
+                }
+                if (balances.hasOwnProperty(t.creditAccount)) {
+                    balances[t.creditAccount] -= amount;
+                }
+            });
+
+            const finalBalances = {};
+            for (const name in balances) {
+                const netBalance = balances[name];
+                const accountType = ACCOUNTS[name]?.type;
+                const normalBalance = ACCOUNT_CONFIGS[accountType]?.normalBalance;
+                
+                let displayBalance = netBalance;
+
+                if (normalBalance === 'Credit') {
+                    displayBalance = -netBalance;
+                }
+                
+                // Keep as whole numbers
+                finalBalances[name] = Math.round(displayBalance);
+            }
+            return finalBalances;
+        }
+
+        // --- 5. Render UI Components ---
+        const LIQUIDITY_ACCOUNTS = ['Cash', 'Bank', 'Accounts Receivable', 'Accounts Payable'];
+        
+        function updateUI(transactions) {
+            ALL_TRANSACTIONS = transactions; // Store transactions globally
+            const balances = calculateBalances(transactions);
+            
+            renderBalances(balances);
+
+            // Only re-render the current view if necessary
+            if (currentView === 'DayBook') {
+                renderDayBook(transactions);
+            } else if (currentView === 'Reports') {
+                renderReports(balances);
+                renderReportView(currentReportView); // Re-render reports ensures latest data is shown
+            } else if (currentView === 'LedgersMaster') {
+                // Ensure sub-view is rendered (default: Account Detail)
+                renderLedgersMasterSubView(currentMasterSubView);
+            }
+        }
+
+        function renderBalances(balances) {
+            balancesContainer.innerHTML = ''; 
+            // Filter account names to only include the required liquidity accounts
+            const accountNames = Object.keys(ACCOUNTS)
+                .filter(name => LIQUIDITY_ACCOUNTS.includes(name))
+                .sort((a, b) => {
+                    // Custom sort to keep a logical order: Cash, Bank, AR, AP
+                    const order = { 'Cash': 1, 'Bank': 2, 'Accounts Receivable': 3, 'Accounts Payable': 4 };
+                    return (order[a] || 5) - (order[b] || 5);
+                });
+
+            accountNames.forEach(name => {
+                const balance = balances[name];
+                const accountType = ACCOUNTS[name]?.type;
+                const config = ACCOUNT_CONFIGS[accountType] || {};
+                const normalBalance = config.normalBalance;
+                const icon = config.icon || '💸';
+
+                if (!accountType) return; 
+
+                let isFavorable = (normalBalance === 'Debit' && balance >= 0) || (normalBalance === 'Credit' && balance >= 0);
+                let textColor = isFavorable ? 'text-green-400' : 'text-red-400'; /* Dark mode colors */
+                
+                const displayValue = Math.abs(balance);
+
+                const balanceHtml = `
+                    <div class="balance-card ${normalBalance === 'Debit' ? 'debit-normal' : 'credit-normal'} bg-gray-700 p-5 rounded-xl shadow-lg border border-gray-600 transition duration-300 hover:shadow-xl">
+                        <div class="flex items-center justify-between">
+                            <span class="text-3xl">${icon}</span>
+                            <span class="text-xs font-semibold text-gray-400">${normalBalance}</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-200 mt-2 truncate">${name}</h3>
+                        <p class="text-sm text-gray-400">${accountType}</p>
+                        <p class="text-3xl font-extrabold mt-2 ${textColor}">${formatter.format(displayValue)}</p>
+                    </div>
+                `;
+                balancesContainer.insertAdjacentHTML('beforeend', balanceHtml);
+            });
+        }
+
+        // --- Day Book Implementation ---
+        function renderDayBook(transactions) {
+            dayBookBody.innerHTML = '';
+            
+            if (transactions.length === 0) {
+                document.getElementById('no-transactions').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('no-transactions').classList.add('hidden');
+
+            const sortedTransactions = transactions.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                // Sort primarily by date descending, then by timestamp descending
+                if (dateB.getTime() !== dateA.getTime()) {
+                    return dateB - dateA; 
+                }
+                return new Date(b.timestamp) - new Date(a.timestamp);
+            });
+
+            sortedTransactions.forEach(t => {
+                const dateString = new Date(t.date).toLocaleDateString('en-IN');
+                const rowHtml = `
+                    <tr class="hover:bg-gray-700 transition duration-100">
+                        <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-200">${dateString}</td>
+                        <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-300 font-medium">${t.voucherType || 'Journal'}</td>
+                        <td class="px-3 py-4 text-sm text-gray-300">${t.narration || ''}</td>
+                        <td class="px-3 py-4 whitespace-nowrap text-sm text-blue-400 font-medium">${t.debitAccount}</td>
+                        <td class="px-3 py-4 whitespace-nowrap text-sm text-gray-300 font-medium">${t.creditAccount}</td>
+                        <td class="px-3 py-4 whitespace-nowrap text-sm text-right font-semibold text-gray-200">${formatter.format(t.amount)}</td>
+                    </tr>
+                `;
+                dayBookBody.insertAdjacentHTML('beforeend', rowHtml);
+            });
+        }
+        
+        // --- Export to CSV Function ---
+        function exportDayBookToCSV() {
+            if (ALL_TRANSACTIONS.length === 0) {
+                alert("Day Book is empty. Nothing to export."); // Use simple alert here since no data is lost
+                return;
+            }
+
+            const headers = ["Date", "Voucher Type", "Narration", "Debit Account", "Credit Account", "Amount (INR)"];
+            let csv = headers.join(",") + "\n";
+
+            ALL_TRANSACTIONS.forEach(t => {
+                // Ensure date is in standard YYYY-MM-DD format for spreadsheet sorting
+                const dateFormatted = new Date(t.date).toISOString().slice(0, 10);
+                
+                // Escape narration field to handle commas within the text
+                const narrationEscaped = `"${t.narration.replace(/"/g, '""')}"`;
+                
+                const row = [
+                    dateFormatted,
+                    t.voucherType,
+                    narrationEscaped,
+                    t.debitAccount,
+                    t.creditAccount,
+                    t.amount // Use raw integer amount for computation in spreadsheet
+                ].join(",");
+                
+                csv += row + "\n";
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            
+            // Create a filename with the current date
+            const today = new Date().toISOString().slice(0, 10);
+            const filename = `fintrack_daybook_${today}.csv`;
+            
+            if (link.download !== undefined) {
+                // Feature detection for download attribute
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                // Fallback for older browsers
+                window.open('data:text/csv;charset=utf-8,' + encodeURIComponent(csv));
+            }
+        }
+        window.exportDayBookToCSV = exportDayBookToCSV;
+        // --- END Export to CSV Function ---
+
+        // --- Import from CSV Function ---
+        async function importDayBookFromCSV(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            importStatusEl.classList.remove('hidden', 'text-red-400', 'text-green-400');
+            importStatusEl.classList.add('text-yellow-400');
+            importStatusEl.textContent = 'Reading file... Do not navigate away.';
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const csvText = e.target.result;
+                const lines = csvText.trim().split('\n');
+                
+                if (lines.length < 2) {
+                    setImportStatus('Error: CSV is empty or only contains headers.', 'red');
+                    return;
+                }
+                
+                // 1. Validate Headers
+                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                const expectedHeaders = ["Date", "Voucher Type", "Narration", "Debit Account", "Credit Account", "Amount (INR)"];
+                
+                if (headers.join(',') !== expectedHeaders.join(',')) {
+                    setImportStatus('Error: Invalid CSV format. Headers must be: ' + expectedHeaders.join(', '), 'red');
+                    return;
+                }
+
+                const newTransactions = [];
+                const existingAccountNames = Object.keys(ACCOUNTS);
+
+                // 2. Parse and Validate Data Lines
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i];
+                    // Basic CSV parsing that handles quoted strings (like Narration)
+                    const row = parseCSVRow(line);
+
+                    if (row.length !== expectedHeaders.length) {
+                        setImportStatus(`Error on line ${i + 1}: Expected ${expectedHeaders.length} columns, got ${row.length}.`, 'red');
+                        return;
+                    }
+
+                    let [date, voucherType, narration, debitAccount, creditAccount, amountString] = row;
+                    
+                    // --- DATE FORMAT FIX: Handle DD-MM-YYYY and convert to YYYY-MM-DD ---
+                    let dateForValidation = date;
+                    if (date.match(/^\d{2}-\d{2}-\d{4}$/)) { // Checks for DD-MM-YYYY format
+                        const parts = date.split('-');
+                        // Convert to YYYY-MM-DD
+                        dateForValidation = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                    }
+
+                    const parsedDate = new Date(dateForValidation);
+                    
+                    // Validation Checks
+                    if (isNaN(parsedDate.getTime()) || !dateForValidation.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        setImportStatus(`Error on line ${i + 1}: Invalid Date format. Must be YYYY-MM-DD or DD-MM-YYYY.`, 'red');
+                        return;
+                    }
+
+                    const amount = parseInt(amountString, 10);
+                    
+                    if (!VOUCHER_TYPES.includes(voucherType.replace(' Voucher', ''))) { // Remove " Voucher" for comparison
+                        setImportStatus(`Error on line ${i + 1}: Invalid Voucher Type. Check spelling (e.g., Journal, Payment).`, 'red');
+                        return;
+                    }
+                    if (isNaN(amount) || amount <= 0) {
+                        setImportStatus(`Error on line ${i + 1}: Invalid or zero Amount.`, 'red');
+                        return;
+                    }
+                    if (debitAccount === creditAccount) {
+                         setImportStatus(`Error on line ${i + 1}: Debit and Credit accounts must be different.`, 'red');
+                        return;
+                    }
+                    if (!existingAccountNames.includes(debitAccount) || !existingAccountNames.includes(creditAccount)) {
+                        setImportStatus(`Error on line ${i + 1}: Account '${debitAccount}' or '${creditAccount}' not found in your Chart of Accounts. Please add it first.`, 'red');
+                        return;
+                    }
+
+                    newTransactions.push({
+                        // Store the validated YYYY-MM-DD format
+                        date: dateForValidation,
+                        voucherType: voucherType,
+                        narration: narration,
+                        debitAccount: debitAccount,
+                        creditAccount: creditAccount,
+                        amount: amount,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
+                // 3. Batch Write to Firestore
+                if (newTransactions.length > 0) {
+                    try {
+                        const batch = writeBatch(db);
+                        const collectionRef = getTransactionsCollectionRef(db, userId, appId);
+                        
+                        newTransactions.forEach(t => {
+                            const docRef = doc(collectionRef); // Generate a new doc ref for each
+                            batch.set(docRef, t);
+                        });
+                        
+                        await batch.commit();
+                        setImportStatus(`Success! Imported ${newTransactions.length} vouchers.`, 'green');
+                        // The onSnapshot listener handles UI update
+                        
+                    } catch (e) {
+                        console.error("Batch write failed:", e);
+                        setImportStatus(`Error saving data to database: ${e.message}`, 'red');
+                    }
+                }
+            };
+            reader.onerror = () => {
+                setImportStatus('Error reading file.', 'red');
+            };
+            
+            reader.readAsText(file);
+        }
+        window.importDayBookFromCSV = importDayBookFromCSV;
+
+        // Helper function for basic CSV row parsing (handles quoted narration)
+        function parseCSVRow(text) {
+            const result = [];
+            let inQuotes = false;
+            let currentField = '';
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+
+                if (char === '"') {
+                    if (inQuotes && text[i + 1] === '"') {
+                        // Escaped double quote "" -> "
+                        currentField += '"';
+                        i++; // Skip next quote
+                    } else {
+                        // Toggle quote state
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    // End of field
+                    result.push(currentField.trim().replace(/^"|"$/g, '')); // Trim and remove outer quotes if they exist
+                    currentField = '';
+                } else {
+                    currentField += char;
+                }
+            }
+            result.push(currentField.trim().replace(/^"|"$/g, '')); // Push the last field
+            return result;
+        }
+
+        // Helper to set import status message and color
+        function setImportStatus(message, type) {
+            importStatusEl.textContent = message;
+            importStatusEl.classList.remove('text-yellow-400', 'text-green-400', 'text-red-400', 'hidden');
+            if (type === 'red') {
+                importStatusEl.classList.add('text-red-400');
+            } else if (type === 'green') {
+                 importStatusEl.classList.add('text-green-400');
+            }
+            // Clear file input immediately after processing
+            document.getElementById('file-input-import').value = '';
+        }
+
+        // --- END Import from CSV Function ---
+
+
+        // --- Ledger Implementation ---
+        function renderLedger() {
+            const selectedAccount = ledgerAccountSelect.value;
+            ledgerContent.innerHTML = '';
+
+            if (!selectedAccount) {
+                 ledgerContent.innerHTML = '<p class="p-6 text-center text-gray-400">Please select an account above to view its detailed ledger.</p>';
+                 return;
+            }
+            
+            const accountType = ACCOUNTS[selectedAccount]?.type;
+            const normalBalance = ACCOUNT_CONFIGS[accountType]?.normalBalance;
+            const finalBalance = calculateBalances(ALL_TRANSACTIONS)[selectedAccount];
+
+            // Filter and prepare ledger entries
+            const ledgerEntries = ALL_TRANSACTIONS
+                .filter(t => t.debitAccount === selectedAccount || t.creditAccount === selectedAccount)
+                .map(t => {
+                    const isDebit = t.debitAccount === selectedAccount;
+                    const amount = t.amount;
+                    // Ledger narration should show the CONTRA account
+                    const contraAccount = isDebit ? t.creditAccount : t.debitAccount;
+                    return {
+                        ...t,
+                        isDebit,
+                        contraAccount
+                    };
+                })
+                .sort((a, b) => new Date(a.date) - new Date(b.date) || new Date(a.timestamp) - new Date(a.timestamp));
+
+
+            let runningBalance = 0;
+
+            let html = `
+                <h3 class="text-xl font-bold p-4 bg-gray-600">${selectedAccount} Ledger (Type: ${accountType})</h3>
+                <table class="min-w-full divide-y divide-gray-600">
+                    <thead class="bg-gray-700">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Particulars</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider text-blue-400">Debit (₹)</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider text-red-400">Credit (₹)</th>
+                            <th class="px-4 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Balance (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-gray-800 divide-y divide-gray-700">
+            `;
+            
+            // Render entries and calculate running balance
+            ledgerEntries.forEach(entry => {
+                const debit = entry.isDebit ? entry.amount : 0;
+                const credit = entry.isDebit ? 0 : entry.amount;
+                
+                // Calculate running balance based on Normal Balance rule for the ledger
+                if (entry.isDebit) {
+                    runningBalance += (normalBalance === 'Debit') ? entry.amount : -entry.amount;
+                } else { // is Credit
+                    runningBalance += (normalBalance === 'Credit') ? entry.amount : -entry.amount;
+                }
+
+                const balanceText = formatter.format(Math.abs(runningBalance));
+                const balanceColor = runningBalance >= 0 ? 'text-green-400' : 'text-red-400';
+                const balanceType = runningBalance >= 0 ? normalBalance : (normalBalance === 'Debit' ? 'Credit' : 'Debit');
+
+                html += `
+                    <tr class="hover:bg-gray-700 transition duration-100">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-200">${new Date(entry.date).toLocaleDateString('en-IN')}</td>
+                        <td class="px-4 py-3 text-sm text-gray-300">
+                            ${entry.isDebit ? 'To' : 'By'} ${entry.contraAccount} (${entry.voucherType})
+                            <p class="text-xs text-gray-500">${entry.narration}</p>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-right text-blue-400">${debit > 0 ? formatter.format(debit) : ''}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-right text-red-400">${credit > 0 ? formatter.format(credit) : ''}</td>
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-right font-semibold ${balanceColor}">
+                            ${balanceText} <span class="text-xs text-gray-500">(${balanceType})</span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+                <div class="p-4 bg-gray-600 font-extrabold text-lg flex justify-between rounded-b-lg">
+                    <span>FINAL CLOSING BALANCE:</span>
+                    <span class="${finalBalance >= 0 ? 'text-green-400' : 'text-red-400'}">${formatter.format(Math.abs(finalBalance))} (${finalBalance >= 0 ? normalBalance : (normalBalance === 'Debit' ? 'Credit' : 'Debit')})</span>
+                </div>
+            `;
+            
+            ledgerContent.innerHTML = html;
+        }
+        window.renderLedger = renderLedger; // Expose globally
+
+
+        // --- Reports Implementation Stubs ---
+        function renderReports(balances) {
+            renderTrialBalance(balances);
+            renderIncomeStatement(balances);
+            renderBalanceSheet(balances);
+        }
+
+        function renderTrialBalance(balances) {
+            const reportEl = document.getElementById('trial-balance-report');
+            let totalDebit = 0;
+            let totalCredit = 0;
+            
+            let html = `
+                <table class="min-w-full text-xs">
+                    <thead>
+                        <tr class="font-bold border-b border-gray-600">
+                            <td class="pt-2 pb-1 text-gray-300">Account</td>
+                            <td class="text-right pt-2 pb-1 text-gray-300">Debit (₹)</td>
+                            <td class="text-right pt-2 pb-1 text-gray-300">Credit (₹)</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            const accountNames = Object.keys(ACCOUNTS).sort();
+
+            accountNames.forEach(name => {
+                const balance = balances[name];
+                const accountType = ACCOUNTS[name]?.type;
+                const normalBalance = ACCOUNT_CONFIGS[accountType]?.normalBalance;
+                const displayValue = Math.abs(balance);
+
+                let debit = 0;
+                let credit = 0;
+
+                // Trial Balance Logic
+                if (balance > 0) {
+                    if (normalBalance === 'Debit') {
+                        debit = displayValue;
+                        totalDebit += debit;
+                    } else { // Normal Balance is Credit
+                        credit = displayValue;
+                        totalCredit += credit;
+                    }
+                }
+                else if (balance < 0) {
+                    if (normalBalance === 'Debit') {
+                        credit = displayValue;
+                        totalCredit += credit;
+                    } else { // Normal Balance is Credit
+                        debit = displayValue;
+                        totalCredit += debit;
+                    }
+                }
+
+
+                if (debit > 0 || credit > 0) {
+                    html += `
+                        <tr class="border-b border-gray-700 hover:bg-gray-700">
+                            <td class="py-1 text-gray-300">${name}</td>
+                            <td class="text-right text-gray-300">${debit > 0 ? formatter.format(debit) : ''}</td>
+                            <td class="text-right text-gray-300">${credit > 0 ? formatter.format(credit) : ''}</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            html += `
+                    </tbody>
+                    <tfoot class="font-extrabold bg-gray-600 text-gray-100">
+                        <tr>
+                            <td class="py-2">TOTALS</td>
+                            <td class="text-right py-2">${formatter.format(totalDebit)}</td>
+                            <td class="text-right py-2">${formatter.format(totalCredit)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            `;
+
+            if (totalDebit !== totalCredit) {
+                html += `<p class="mt-4 text-red-400 font-bold text-sm">TRIAL BALANCE UNBALANCED! Difference: ${formatter.format(Math.abs(totalDebit - totalCredit))}.</p>`;
+            } else {
+                 html += `<p class="mt-4 text-green-400 font-bold text-sm">TRIAL BALANCE BALANCED: ${formatter.format(totalDebit)}.</p>`;
+            }
+
+            reportEl.innerHTML = html;
+        }
+
+        function renderIncomeStatement(balances) {
+            const reportEl = document.getElementById('income-statement-report');
+            const format = reportFormats.IncomeStatement;
+
+            let totalRevenue = 0;
+            let totalExpense = 0;
+            
+            const revenueAccounts = [];
+            const expenseAccounts = [];
+
+            for (const name in balances) {
+                const type = ACCOUNTS[name]?.type;
+                const balance = balances[name];
+                const displayValue = Math.abs(balance);
+                
+                if (type === ACCOUNT_TYPES.REVENUE) {
+                    totalRevenue += displayValue;
+                    revenueAccounts.push({ name, value: displayValue });
+                } else if (type === ACCOUNT_TYPES.EXPENSE) {
+                    totalExpense += displayValue;
+                    expenseAccounts.push({ name, value: displayValue });
+                }
+            }
+            
+            const netIncome = totalRevenue - totalExpense;
+            
+            let html = '';
+
+            if (format === 'T') {
+                // --- T-FORMAT (HORIZONTAL) - CORRECTED FOR BALANCING ENTRY ---
+                const totalIncomeSide = totalRevenue + Math.max(0, -netIncome); // Income + Net Loss
+                const totalExpenseSide = totalExpense + Math.max(0, netIncome); // Expense + Net Profit
+                
+                // CORRECTED COLOR LOGIC: Profit is Green, Loss is Red
+                const profitColor = netIncome >= 0 ? 'text-green-400' : 'text-red-400';
+                const lossColor = netIncome < 0 ? 'text-red-400' : 'text-green-400';
+
+                html = `
+                    <div class="grid grid-cols-2 gap-4 border border-gray-600 rounded-lg">
+                        <!-- Debit Side (Expenses + Net Profit) -->
+                        <div class="p-3 border-r border-gray-600">
+                            <h4 class="font-bold border-b pb-1 mb-2 text-center text-gray-300">DEBIT (Expenses / Net Profit)</h4>
+                            <ul class="text-xs space-y-1 text-gray-300">
+                                ${expenseAccounts.map(a => `<li class="flex justify-between border-b border-dashed border-gray-700 py-1"><span>To ${a.name}</span> <span class="font-medium">${formatter.format(a.value)}</span></li>`).join('')}
+                                
+                                <!-- Net Profit is placed on the Debit side to balance P&L Account -->
+                                ${netIncome >= 0 ? `<li class="flex justify-between pt-2 border-t border-gray-500 font-extrabold ${profitColor}"><span>To Net Profit (Transferred to Capital)</span> <span class="text-lg">${formatter.format(netIncome)}</span></li>` : ''}
+                            </ul>
+                        </div>
+
+                        <!-- Credit Side (Revenue + Net Loss) -->
+                        <div class="p-3">
+                            <h4 class="font-bold border-b pb-1 mb-2 text-center text-gray-300">CREDIT (Revenue / Net Loss)</h4>
+                            <ul class="text-xs space-y-1 text-gray-300">
+                                ${revenueAccounts.map(a => `<li class="flex justify-between border-b border-dashed border-gray-700 py-1"><span>By ${a.name}</span> <span class="font-medium">${formatter.format(a.value)}</span></li>`).join('')}
+                                
+                                <!-- Net Loss is placed on the Credit side to balance P&L Account -->
+                                ${netIncome < 0 ? `<li class="flex justify-between pt-2 border-t border-gray-500 font-extrabold ${lossColor}"><span>By Net Loss (Transferred to Capital)</span> <span class="text-lg">${formatter.format(Math.abs(netIncome))}</span></li>` : ''}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mt-1 font-extrabold text-md">
+                        <div class="p-2 bg-gray-600 text-gray-100 text-right rounded-bl-lg">${formatter.format(totalExpenseSide)}</div>
+                        <div class="p-2 bg-gray-600 text-gray-100 text-right rounded-br-lg">${formatter.format(totalIncomeSide)}</div>
+                    </div>
+                `;
+            } else {
+                // --- VERTICAL FORMAT (COMPANIES ACT REVISED) ---
+                
+                // Sort expenses by name for ordered display
+                expenseAccounts.sort((a, b) => a.name.localeCompare(b.name));
+                const profitColor = netIncome >= 0 ? 'text-green-400' : 'text-red-400';
+
+                html = `
+                    <table class="min-w-full text-sm text-gray-300">
+                        <thead class="bg-gray-600">
+                            <tr class="font-bold">
+                                <td class="p-2 w-3/4">Particulars</td>
+                                <td class="text-right p-2 w-1/4">Amount (₹)</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- I. REVENUE FROM OPERATIONS -->
+                            <tr class="font-extrabold border-t-2 border-gray-500 bg-gray-700">
+                                <td class="p-2">I. REVENUE FROM OPERATIONS (Sales, etc.)</td>
+                                <td class="text-right p-2">${formatter.format(totalRevenue)}</td>
+                            </tr>
+                            <tr class="font-bold">
+                                <td class="p-2 pl-4">Total Revenue</td>
+                                <td class="text-right p-2 border-b border-gray-500">${formatter.format(totalRevenue)}</td>
+                            </tr>
+
+                            <!-- II. EXPENSES -->
+                            <tr class="font-extrabold border-t-2 mt-4 border-gray-500 bg-gray-700">
+                                <td class="p-2">II. EXPENSES</td>
+                                <td class="text-right p-2"></td>
+                            </tr>
+                            ${expenseAccounts.map(a => `
+                                <tr class="border-b border-dashed border-gray-700">
+                                    <td class="pl-4 py-1 text-xs text-gray-400">${a.name}</td>
+                                    <td class="text-right py-1 text-xs">${formatter.format(a.value)}</td>
+                                </tr>
+                            `).join('')}
+                            <tr class="font-bold">
+                                <td class="p-2 pl-4">Total Expenses</td>
+                                <td class="text-right p-2 border-t border-gray-500">${formatter.format(totalExpense)}</td>
+                            </tr>
+
+                            <!-- III. PROFIT/LOSS BEFORE TAX -->
+                            <tr class="font-extrabold border-t-4 border-gray-500 bg-gray-700">
+                                <td class="p-3">III. PROFIT (LOSS) BEFORE TAX (I - II)</td>
+                                <td class="text-right p-3 text-xl ${profitColor}">${formatter.format(netIncome)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+            }
+            
+            reportEl.innerHTML = html;
+        }
+
+        function renderBalanceSheet(balances) {
+            const reportEl = document.getElementById('balance-sheet-report');
+            const format = reportFormats.BalanceSheet;
+
+            let totalAssets = 0;
+            let totalLiabilities = 0;
+            let totalEquity = 0;
+            
+            const assetAccounts = [];
+            const liabilityAccounts = [];
+            const equityAccounts = [];
+            
+            // Calculate Net Income/Loss
+            let totalRevenue = 0;
+            let totalExpense = 0;
+            for (const name in balances) {
+                const type = ACCOUNTS[name]?.type;
+                const balance = balances[name];
+                const displayValue = Math.abs(balance);
+                
+                if (type === ACCOUNT_TYPES.REVENUE) {
+                    totalRevenue += displayValue;
+                } else if (type === ACCOUNT_TYPES.EXPENSE) {
+                    totalExpense += displayValue;
+                }
+            }
+            const netIncome = totalRevenue - totalExpense;
+
+            for (const name in balances) {
+                const type = ACCOUNTS[name]?.type;
+                const balance = balances[name];
+                const displayValue = Math.abs(balance);
+
+                if (type === ACCOUNT_TYPES.ASSET) {
+                    totalAssets += displayValue;
+                    assetAccounts.push({ name, value: displayValue });
+                } else if (type === ACCOUNT_TYPES.LIABILITY) {
+                    totalLiabilities += displayValue;
+                    liabilityAccounts.push({ name, value: displayValue });
+                } else if (type === ACCOUNT_TYPES.EQUITY) {
+                    totalEquity += displayValue;
+                    equityAccounts.push({ name, value: displayValue });
+                }
+            }
+            
+            // Add Net Income/Loss to Equity total
+            const equityPlusIncome = totalEquity + netIncome;
+            const liabilitiesPlusEquity = totalLiabilities + equityPlusIncome;
+            
+            let html = '';
+
+            if (format === 'T') {
+                // --- T-FORMAT (HORIZONTAL) ---
+                html = `
+                    <div class="grid grid-cols-2 gap-4 border border-gray-600 rounded-lg">
+                        <!-- Liabilities & Equity Side (Credit) -->
+                        <div class="p-3 border-r border-gray-600">
+                            <h4 class="font-bold border-b pb-1 mb-2 text-center text-teal-400">LIABILITIES & EQUITY (Credit)</h4>
+                            <p class="text-sm font-bold mt-2 text-gray-200">Equity:</p>
+                            <ul class="text-xs list-disc pl-5 space-y-1 text-gray-300">
+                                ${equityAccounts.map(a => `<li class="flex justify-between py-1"><span>${a.name}</span> <span class="font-medium">${formatter.format(a.value)}</span></li>`).join('')}
+                                <li class="flex justify-between font-extrabold ${netIncome >= 0 ? 'text-green-400' : 'text-red-400'}"><span>Net Profit/Loss:</span> <span>${formatter.format(netIncome)}</span></li>
+                            </ul>
+                            <p class="text-sm font-bold mt-4 text-gray-200">Liabilities:</p>
+                            <ul class="text-xs list-disc pl-5 space-y-1 text-gray-300">
+                                ${liabilityAccounts.map(a => `<li class="flex justify-between py-1"><span>${a.name}</span> <span class="font-medium">${formatter.format(a.value)}</span></li>`).join('')}
+                            </ul>
+                        </div>
+
+                        <!-- Asset Side (Debit) -->
+                        <div class="p-3">
+                            <h4 class="font-bold border-b pb-1 mb-2 text-center text-blue-400">ASSETS (Debit)</h4>
+                            <p class="text-sm font-bold mt-2 text-gray-200">Assets:</p>
+                            <ul class="text-xs list-disc pl-5 space-y-1 text-gray-300">
+                                ${assetAccounts.map(a => `<li class="flex justify-between py-1"><span>${a.name}</span> <span class="font-medium">${formatter.format(a.value)}</span></li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t-2 border-gray-600">
+                        <p class="text-xl font-extrabold text-blue-400 flex justify-between"><span>Total Assets:</span> <span class="text-2xl">${formatter.format(totalAssets)}</span></p>
+                        <p class="text-xl font-extrabold text-teal-400 flex justify-between"><span>Liabilities + Equity:</span> <span class="text-2xl">${formatter.format(liabilitiesPlusEquity)}</span></p>
+                        <p class="text-md font-extrabold mt-3 pt-2 border-t border-gray-600 ${Math.abs(totalAssets - liabilitiesPlusEquity) < 1 ? 'text-green-400' : 'text-red-400'} flex justify-between">
+                            <span>Balance Check:</span> <span>${Math.abs(totalAssets - liabilitiesPlusEquity) < 1 ? 'BALANCED' : 'UNBALANCED'}</span>
+                        </p>
+                    </div>
+                `;
+
+            } else {
+                // --- VERTICAL FORMAT (COMPANIES ACT) ---
+                assetAccounts.sort((a, b) => a.name.localeCompare(b.name));
+                liabilityAccounts.sort((a, b) => a.name.localeCompare(b.name));
+                equityAccounts.sort((a, b) => a.name.localeCompare(b.name));
+
+                html = `
+                    <table class="min-w-full text-sm text-gray-300">
+                        <thead class="bg-gray-600">
+                            <tr class="font-bold">
+                                <td class="p-2 w-3/4">Particulars</td>
+                                <td class="text-right p-2 w-1/4">Amount (₹)</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- I. EQUITY AND LIABILITIES -->
+                            <tr class="font-extrabold border-t-2 border-gray-500 bg-gray-700">
+                                <td class="p-2">I. EQUITY AND LIABILITIES</td>
+                                <td class="text-right p-2"></td>
+                            </tr>
+                            
+                            <!-- 1. Shareholders' Funds (Equity) -->
+                            <tr class="font-bold border-t border-gray-600">
+                                <td class="p-2 pl-4">1. Shareholders' Funds</td>
+                                <td class="text-right p-2"></td>
+                            </tr>
+                            ${equityAccounts.map(a => `
+                                <tr class="border-b border-dashed border-gray-700">
+                                    <td class="pl-8 py-1 text-xs text-gray-400">${a.name}</td>
+                                    <td class="text-right py-1 text-xs text-gray-400">${formatter.format(a.value)}</td>
+                                </tr>
+                            `).join('')}
+                            <tr class="border-b border-dashed border-gray-700">
+                                <td class="pl-8 py-1 text-xs text-gray-400">Profit (Loss) for the Period</td>
+                                <td class="text-right py-1 text-xs text-gray-400 ${netIncome >= 0 ? 'text-green-400' : 'text-red-400'}">${formatter.format(netIncome)}</td>
+                            </tr>
+                            <tr class="font-extrabold">
+                                <td class="p-2 pl-4">Total Shareholders' Funds</td>
+                                <td class="text-right p-2 border-t border-gray-600">${formatter.format(equityPlusIncome)}</td>
+                            </tr>
+
+                            <!-- 2. Non-Current Liabilities (Placeholder) -->
+                            <tr class="font-bold border-t border-gray-600">
+                                <td class="p-2 pl-4">2. Non-Current Liabilities (N/A in simple COA)</td>
+                                <td class="text-right p-2">${formatter.format(0)}</td>
+                            </tr>
+                            
+                            <!-- 3. Current Liabilities -->
+                            <tr class="font-bold border-t border-gray-600">
+                                <td class="p-2 pl-4">3. Current Liabilities</td>
+                                <td class="text-right p-2"></td>
+                            </tr>
+                             ${liabilityAccounts.map(a => `
+                                <tr class="border-b border-dashed border-gray-700">
+                                    <td class="pl-8 py-1 text-xs text-gray-400">${a.name}</td>
+                                    <td class="text-right py-1 text-xs text-gray-400">${formatter.format(a.value)}</td>
+                                </tr>
+                            `).join('')}
+                            <tr class="font-extrabold border-t border-gray-600">
+                                <td class="p-2 pl-4">TOTAL EQUITY AND LIABILITIES</td>
+                                <td class="text-right p-2 text-xl text-teal-400">${formatter.format(liabilitiesPlusEquity)}</td>
+                            </tr>
+
+                            <!-- II. ASSETS -->
+                            <tr class="font-extrabold border-t-4 border-blue-400 bg-gray-700">
+                                <td class="p-2">II. ASSETS</td>
+                                <td class="text-right p-2"></td>
+                            </tr>
+
+                            <!-- 1. Non-Current Assets (Placeholder) -->
+                            <tr class="font-bold border-t border-gray-600">
+                                <td class="p-2 pl-4">1. Non-Current Assets (N/A in simple COA)</td>
+                                <td class="text-right p-2">${formatter.format(0)}</td>
+                            </tr>
+                            
+                            <!-- 2. Current Assets -->
+                            <tr class="font-bold border-t border-gray-600">
+                                <td class="p-2 pl-4">2. Current Assets</td>
+                                <td class="text-right p-2"></td>
+                            </tr>
+                             ${assetAccounts.map(a => `
+                                <tr class="border-b border-dashed border-gray-700">
+                                    <td class="pl-8 py-1 text-xs text-gray-400">${a.name}</td>
+                                    <td class="text-right py-1 text-xs text-gray-400">${formatter.format(a.value)}</td>
+                                </tr>
+                            `).join('')}
+                            <tr class="font-extrabold border-t border-gray-600">
+                                <td class="p-2 pl-4">TOTAL ASSETS</td>
+                                <td class="text-right p-2 text-xl text-blue-400">${formatter.format(totalAssets)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="mt-6 pt-2 border-t border-gray-600">
+                        <p class="text-md font-extrabold ${Math.abs(totalAssets - liabilitiesPlusEquity) < 1 ? 'text-green-400' : 'text-red-400'} flex justify-between">
+                            <span>Final Balance Check:</span> <span>${Math.abs(totalAssets - liabilitiesPlusEquity) < 1 ? 'BALANCED' : 'UNBALANCED'}</span>
+                        </p>
+                    </div>
+                `;
+            }
+            
+            reportEl.innerHTML = html;
+        }
+
+        // --- 6. Voucher Submission ---
+        form.addEventListener('submit', addTransaction);
+
+        async function addTransaction(event) {
+            event.preventDefault();
+
+            if (!isAuthReady || !userId) {
+                errorMsg.textContent = 'Authentication not ready. Please wait.';
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            errorMsg.classList.add('hidden');
+            transactionSuccessMsg.classList.add('hidden'); // Hide on submission attempt
+
+            const date = document.getElementById('date').value;
+            const voucherType = voucherTypeSelect.value;
+            // Changed from description to narration
+            const narration = narrationInput.value.trim(); 
+            const debitAccount = debitAccountSelect.value;
+            const creditAccount = creditAccountSelect.value;
+            
+            // Get the formatted string amount and clean it up for calculation/storage
+            const amountInput = document.getElementById('amount').value;
+            // Strip ALL non-digit characters for whole number input
+            const amountCleaned = amountInput.replace(/[^0-9]/g, '');
+            const amount = parseInt(amountCleaned, 10); // Use parseInt for whole numbers
+
+
+            if (debitAccount === creditAccount) {
+                errorMsg.textContent = 'Debit and Credit accounts must be different.';
+                errorMsg.classList.remove('hidden');
+                submitBtn.disabled = false;
+                return;
+            }
+            if (amount <= 0 || isNaN(amount)) {
+                errorMsg.textContent = 'Amount must be a positive whole number.';
+                errorMsg.classList.remove('hidden');
+                submitBtn.disabled = false;
+                return;
+            }
+
+            const transactionData = {
+                date: date,
+                voucherType: voucherType,
+                narration: narration, // Using narration key
+                debitAccount: debitAccount,
+                creditAccount: creditAccount,
+                amount: amount, // Store the cleaned integer amount
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const collectionRef = getTransactionsCollectionRef(db, userId, appId);
+                await addDoc(collectionRef, transactionData);
+                
+                // --- POST-SUBMISSION LOGIC ---
+                // 1. Clear ONLY the sensitive, specific fields (amount and accounts)
+                debitAccountSelect.value = '';
+                creditAccountSelect.value = '';
+                document.getElementById('amount').value = ''; 
+                
+                // 2. KEEP date, voucherType, and narration
+                
+                // 3. Save the current form state (with empty accounts/amount) to session
+                saveFormToSession(); 
+
+                // Show success notification
+                transactionSuccessMsg.classList.remove('hidden');
+                setTimeout(() => {
+                    transactionSuccessMsg.classList.add('hidden');
+                }, 3000); 
+
+                // Switch to Day Book view after successful entry
+                switchView('DayBook');
+
+            } catch (e) {
+                console.error("Error recording transaction: ", e);
+                errorMsg.textContent = `Error recording transaction: ${e.message}`;
+                errorMsg.classList.remove('hidden');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        // --- 7. Real-time Listener for Transactions ---
+        function listenForTransactions() {
+            if (!isAuthReady || !userId) return;
+
+            const collectionRef = getTransactionsCollectionRef(db, userId, appId);
+
+            onSnapshot(collectionRef, (snapshot) => {
+                const transactions = [];
+                snapshot.forEach((doc) => {
+                    // Check if narration exists or description exists (for older entries)
+                    let data = doc.data();
+                    if (!data.narration && data.description) {
+                         data.narration = data.description;
+                         delete data.description;
+                    }
+                    transactions.push({ id: doc.id, ...data });
+                });
+                updateUI(transactions);
+            }, (error) => {
+                console.error("Error listening to transactions: ", error);
+            });
+        }
+        
+        // --- Dropdown Toggle Helper ---
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            dropdown.classList.toggle('hidden');
+        }
+        window.toggleDropdown = toggleDropdown; // Expose globally
+        
+        // --- Explicit Global Exports ---
+        // Expose functions to the global window object so HTML onclick handlers can access them
+        window.switchView = switchView; 
+        window.setupFirebase = setupFirebase;
+        
+        // --- Initialize Application ---
+        // Start the application immediately after the module definitions and exports are ready
+        setupFirebase();
+        
+    </script>
+</body>
+</html>
